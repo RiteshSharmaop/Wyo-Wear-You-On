@@ -1,16 +1,51 @@
-# React + Vite
+# React + Vite + CRXJS
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This template helps you quickly start developing Chrome extensions with React and Vite. It includes the CRXJS Vite plugin for seamless Chrome extension development.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- React with modern syntax
+- Vite build tool
+- CRXJS Vite plugin integration
+- Chrome extension manifest configuration
 
-## React Compiler
+## Quick Start
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. Install dependencies:
 
-## Expanding the ESLint configuration
+```bash
+npm install
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+2. Start development server:
+
+```bash
+npm run dev
+```
+
+3. Open Chrome and navigate to `chrome://extensions/`, enable "Developer mode", and load the unpacked extension from the `dist` directory.
+
+4. Build for production:
+
+```bash
+npm run build
+```
+
+## Project Structure
+
+- `src/popup/` - Extension popup UI
+- `src/content/` - Content scripts
+- `manifest.config.js` - Chrome extension manifest configuration
+
+## Documentation
+
+- [React Documentation](https://reactjs.org/)
+- [Vite Documentation](https://vitejs.dev/)
+- [CRXJS Documentation](https://crxjs.dev/vite-plugin)
+
+## Chrome Extension Development Notes
+
+- Use `manifest.config.js` to configure your extension
+- The CRXJS plugin automatically handles manifest generation
+- Content scripts should be placed in `src/content/`
+- Popup UI should be placed in `src/popup/`

@@ -28,15 +28,9 @@ export default function SignupView({ onSignupSuccess, onSwitchToLogin }) {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          bodyImage: reader.result,
-        }));
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      // keep file for upload and show preview
+      setFormData((prev) => ({ ...prev, bodyImage: file }));
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -64,20 +58,17 @@ export default function SignupView({ onSignupSuccess, onSwitchToLogin }) {
         throw new Error("Please enter a valid email");
       }
 
-      // Mock API response - Replace with actual backend call
-      const newUser = {
-        id: "user_" + Date.now(),
-        username: formData.username,
+      // Call backend signup via context
+      const payload = {
+        name: formData.username,
         email: formData.email,
-        token: "mock_jwt_token_" + Date.now(),
-        bodyImage: formData.bodyImage,
+        password: formData.password,
       };
-
-      // Use context signup function
-      signup(newUser);
-
-      // Call success callback
-      onSignupSuccess(newUser);
+      const result = await signup({
+        ...payload,
+        imageFile: formData.bodyImage,
+      });
+      onSignupSuccess(result.user || result);
     } catch (err) {
       setError(err.message);
     } finally {

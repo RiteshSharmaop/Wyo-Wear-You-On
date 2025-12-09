@@ -30,6 +30,7 @@ export default function Navbar({ onCollapseChange }) {
     chrome.storage.local.get(["isLoggedIn"], (result) => {
       if (result.isLoggedIn) {
         // User is logged in, show process view
+        // Product image is already captured by content script
         chrome.runtime.sendMessage({ action: "showProcess" }, (response) => {
           if (chrome.runtime.lastError) {
             console.error(

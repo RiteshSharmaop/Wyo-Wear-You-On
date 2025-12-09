@@ -1,13 +1,59 @@
-import { LogOut, Mail, User, CheckCircle, Clock } from "lucide-react";
-import { useState } from "react";
+import {
+  LogOut,
+  Mail,
+  User,
+  CheckCircle,
+  Clock,
+  Package,
+  RefreshCw,
+} from "lucide-react";
+import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 
 export default function ProcessView() {
   const { user: userData, logout } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [productImage, setProductImage] = useState(null);
+  const [isRetrying, setIsRetrying] = useState(false);
+
+  useEffect(() => {
+    // Load product image from Chrome storage
+    chrome.storage.local.get(["productImage"], (result) => {
+      if (result.productImage) {
+        setProductImage(result.productImage);
+      }
+    });
+  }, []);
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleRetryImage = async () => {
+    setIsRetrying(true);
+    try {
+      // Send message to content script to capture new image
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.sendMessage(
+            tabs[0].id,
+            { action: "retryProductImage" },
+            (response) => {
+              if (response && response.success) {
+                // Image has been updated in storage, update local state
+                setProductImage(response.imageUrl);
+              } else {
+                console.error("Failed to capture new image");
+              }
+              setIsRetrying(false);
+            }
+          );
+        }
+      });
+    } catch (error) {
+      console.error("Error retrying image capture:", error);
+      setIsRetrying(false);
+    }
   };
 
   if (!userData) {
@@ -181,6 +227,72 @@ export default function ProcessView() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Product Image Card */}
+          <div className="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700">
+            <div className="flex items-center justify-between gap-2 mb-6">
+              <div className="flex items-center gap-2">
+                <Package className="text-blue-400" size={24} />
+                <h3 className="text-2xl font-bold text-white">Product Image</h3>
+              </div>
+              <button
+                onClick={handleRetryImage}
+                disabled={isRetrying}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  isRetrying
+                    ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
+                title="Fetch new image from current page"
+              >
+                <RefreshCw
+                  size={18}
+                  className={isRetrying ? "animate-spin" : ""}
+                />
+                Retry
+              </button>
+            </div>
+            {productImage ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-center">
+                  <img
+                    src={productImage}
+                    alt="Amazon Product"
+                    className="max-w-full h-auto rounded-lg shadow-lg border border-gray-700 max-h-96 object-contain"
+                    onError={(e) => {
+                      e.target.src = "";
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 bg-gray-900 rounded-lg border border-gray-700">
+                <Package size={48} className="text-gray-500 mb-3" />
+                <p className="text-gray-400 text-center">
+                  No product image captured from Amazon
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Open this extension on an Amazon product page
+                </p>
+                <button
+                  onClick={handleRetryImage}
+                  disabled={isRetrying}
+                  className={`mt-4 flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    isRetrying
+                      ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-700 text-white"
+                  }`}
+                >
+                  <RefreshCw
+                    size={18}
+                    className={isRetrying ? "animate-spin" : ""}
+                  />
+                  {isRetrying ? "Fetching..." : "Fetch Image"}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Action Buttons */}

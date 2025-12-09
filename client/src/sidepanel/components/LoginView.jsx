@@ -16,30 +16,14 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
     setLoading(true);
 
     try {
-      // Simulate API call - Replace with your actual backend endpoint
-      if (!email || !password) {
-        throw new Error("Please fill in all fields");
-      }
-
-      // Validate email format
+      if (!email || !password) throw new Error("Please fill in all fields");
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
+      if (!emailRegex.test(email))
         throw new Error("Please enter a valid email");
-      }
 
-      // Mock API response - Replace this with actual API call
-      const mockUser = {
-        id: "user123",
-        email: email,
-        username: email.split("@")[0],
-        token: "mock_jwt_token_" + Date.now(),
-      };
-
-      // Use context login function
-      login(mockUser);
-
-      // Call success callback
-      onLoginSuccess(mockUser);
+      // Call backend login via context
+      const result = await login({ email, password });
+      onLoginSuccess(result.user || result);
     } catch (err) {
       setError(err.message);
     } finally {

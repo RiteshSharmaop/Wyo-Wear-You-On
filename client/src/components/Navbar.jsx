@@ -17,6 +17,41 @@ export default function Navbar({ onCollapseChange }) {
     if (onCollapseChange) onCollapseChange(state);
   };
 
+  const handleProfile = () => {
+    chrome.runtime.sendMessage({ action: "showProfile" }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error("Error opening side panel:", chrome.runtime.lastError);
+      }
+    });
+  };
+
+  const handleProcess = () => {
+    // Check if user is logged in before opening Process view
+    chrome.storage.local.get(["isLoggedIn"], (result) => {
+      if (result.isLoggedIn) {
+        // User is logged in, show process view
+        chrome.runtime.sendMessage({ action: "showProcess" }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Error opening side panel:",
+              chrome.runtime.lastError
+            );
+          }
+        });
+      } else {
+        // User is not logged in, show login view
+        chrome.runtime.sendMessage({ action: "showLogin" }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error(
+              "Error opening side panel:",
+              chrome.runtime.lastError
+            );
+          }
+        });
+      }
+    });
+  };
+
   return (
     <>
       <div
@@ -49,14 +84,14 @@ export default function Navbar({ onCollapseChange }) {
                   isDark ? "bg-gray-700" : "bg-gray-800"
                 } flex items-center justify-center`}
               >
-                <span className="text-white font-bold">FA</span>
+                <span className="text-white font-bold">Wyo</span>
               </div>
               <span
                 className={`font-semibold text-xl ${
                   isDark ? "text-white" : "text-gray-800"
                 }`}
               >
-                FashionApp
+                Wear Your On
               </span>
             </div>
 
@@ -81,9 +116,22 @@ export default function Navbar({ onCollapseChange }) {
                     ? "bg-gray-800 hover:bg-gray-700 text-white"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-800"
                 }`}
+                onClick={handleProfile}
               >
                 <User size={20} />
                 <span className="font-medium">Profile</span>
+              </button>
+
+              {/* Process Button */}
+              <button
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                  isDark
+                    ? "bg-gray-800 hover:bg-gray-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-800"
+                }`}
+                onClick={handleProcess}
+              >
+                <span className="font-medium">Process</span>
               </button>
 
               {/* Theme Toggle */}

@@ -8,17 +8,20 @@ export default defineManifest({
   icons: {
     48: "public/logo.png",
   },
-  permissions: ["sidePanel", "contentSettings"],
+  permissions: ["sidePanel", "contentSettings", "storage", "tabs"],
   action: {
     default_icon: {
       48: "public/logo.png",
     },
     default_popup: "src/popup/index.html",
   },
+  background: {
+    service_worker: "src/background.js",
+  },
   content_scripts: [
     {
       js: ["src/content/main.jsx"],
-      matches: ["https://*/*", "http://localhost/*", "http://localhost:*/*"],
+      matches: ["https://www.amazon.in/*"],
     },
   ],
   side_panel: {

@@ -9,6 +9,12 @@ export default defineManifest({
     48: "public/logo.png",
   },
   permissions: ["sidePanel", "contentSettings", "storage", "tabs"],
+  host_permissions: [
+    "http://localhost:4000/*",
+    "http://localhost:5173/*",
+    "https://openrouter.ai/*",
+    "https://api.cloudinary.com/*",
+  ],
   action: {
     default_icon: {
       48: "public/logo.png",

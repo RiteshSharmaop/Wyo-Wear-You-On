@@ -7,6 +7,7 @@ const { configureCloudinary } = require("./services/cloudinaryService");
 
 const authRoutes = require("./routes/auth");
 const userRoutes = require("./routes/user");
+const tryonRoutes = require("./routes/tryon");
 
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(morgan("dev"));
 // routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/tryon", tryonRoutes);
 
 app.get("/", (req, res) =>
   res.json({ ok: true, message: "Wyo server running" })

@@ -6,15 +6,20 @@ import {
   Clock,
   Package,
   RefreshCw,
+  Loader,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
+import api from "../../utils/api";
 
 export default function ProcessView() {
   const { user: userData, logout } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [productImage, setProductImage] = useState(null);
   const [isRetrying, setIsRetrying] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processError, setProcessError] = useState(null);
+  const [trialResult, setTrialResult] = useState(null);
 
   useEffect(() => {
     // Load product image from Chrome storage
@@ -27,6 +32,43 @@ export default function ProcessView() {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const handleStartProcess = async () => {
+    console.log("Frontend: Processing Started");
+
+    if (!productImage) {
+      setProcessError("Please capture a product image first");
+      return;
+    }
+    if (!userData?.bodyImage) {
+      setProcessError("Please upload a body image first in Profile");
+      return;
+    }
+    console.log("Image : ", productImage);
+
+    setIsProcessing(true);
+    setProcessError(null);
+    setTrialResult(null);
+
+    try {
+      console.log("Frontend: Sending product image URL to backend");
+
+      // Send product image URL as JSON to backend
+      const result = await api.post("/api/tryon/apply-dress", {
+        productImageUrl: productImage,
+      } );
+      console.log("Frontend: Backend returned data:", result);
+
+      setTrialResult(result.data);
+    } catch (err) {
+      console.error("Error processing dress try-on:", err);
+      setProcessError(
+        err.response?.data?.message || err.message || "Processing failed"
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleRetryImage = async () => {
@@ -50,6 +92,8 @@ export default function ProcessView() {
           );
         }
       });
+
+      console.log("Product Image in retrying : ", productImage);
     } catch (error) {
       console.error("Error retrying image capture:", error);
       setIsRetrying(false);
@@ -297,15 +341,85 @@ export default function ProcessView() {
 
           {/* Action Buttons */}
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-lg transition-colors border border-green-500">
-              <CheckCircle size={20} />
-              Start Process
+            <button
+              onClick={handleStartProcess}
+              disabled={isProcessing || !productImage || !userData?.bodyImage}
+              className={`flex cursor-pointer items-center justify-center gap-2 font-bold py-4 rounded-lg transition-colors border ${
+                isProcessing || !productImage || !userData?.bodyImage
+                  ? "bg-gray-600 border-gray-500 text-gray-300 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-700 text-white border-green-500"
+              }`}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader size={20} className="animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={20} />
+                  Start Process
+                </>
+              )}
             </button>
             <button className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors border border-blue-500">
               <Clock size={20} />
               View History
             </button>
           </div>
+
+          {/* Error Message */}
+          {processError && (
+            <div className="bg-red-900 border border-red-700 rounded-lg p-4 text-red-200">
+              <p className="font-semibold">Error</p>
+              <p>{processError}</p>
+            </div>
+          )}
+
+          {/* Trial Result Section */}
+          {trialResult && (
+            <div className="bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-700">
+              <h3 className="text-2xl font-bold text-white mb-6">
+                Try-On Result
+              </h3>
+              <div className="space-y-4">
+                <div className="flex flex-col gap-4">
+                  <div className="bg-gray-900 rounded-lg p-4">
+                    <p className="text-gray-400 text-sm mb-2">
+                      AI Processed Result:
+                    </p>
+                    <div className="text-white bg-gray-800 p-4 rounded max-h-40 overflow-y-auto">
+                      {trialResult.result}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="bg-gray-900 rounded p-3 border border-gray-700">
+                      <p className="text-gray-400 mb-1">Dress Image:</p>
+                      <a
+                        href={trialResult.dressImage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 truncate block"
+                      >
+                        View
+                      </a>
+                    </div>
+                    <div className="bg-gray-900 rounded p-3 border border-gray-700">
+                      <p className="text-gray-400 mb-1">Body Image:</p>
+                      <a
+                        href={trialResult.userBodyImage}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 truncate block"
+                      >
+                        View
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,10 +1,13 @@
-import { LogOut, User, Mail } from "lucide-react";
-import { useState } from "react";
+import { LogOut, User, Mail, Camera } from "lucide-react";
+import { useState, useRef } from "react";
 import { useUser } from "../context/UserContext";
 
 export default function ProfileView() {
   const { user: userData, logout } = useUser();
+  const { uploadBodyImage } = useUser();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
 
   const handleLogout = () => {
     logout();
@@ -63,6 +66,47 @@ export default function ProfileView() {
 
       {/* Content */}
       <div className="p-6 max-w-4xl">
+        {/* Full body image banner */}
+        {userData?.bodyImage && (
+          <div className="mb-6 rounded-lg overflow-hidden border border-gray-700">
+            <img
+              src={userData.bodyImage}
+              alt="Full body"
+              className="w-full h-64 object-cover"
+            />
+          </div>
+        )}
+
+        {/* Upload button */}
+        <div className="mb-6">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={async (e) => {
+              const f = e.target.files && e.target.files[0];
+              if (!f) return;
+              setUploading(true);
+              try {
+                await uploadBodyImage(f);
+              } catch (err) {
+                console.error("Upload failed", err);
+                alert("Upload failed");
+              } finally {
+                setUploading(false);
+              }
+            }}
+          />
+          <button
+            onClick={() => fileRef.current && fileRef.current.click()}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            disabled={uploading}
+          >
+            <Camera size={16} />
+            {uploading ? "Uploading..." : "Upload Body Image"}
+          </button>
+        </div>
         <div className="space-y-6">
           {/* Profile Picture Card */}
           <div className="bg-gray-800 rounded-xl shadow-lg p-8 border border-gray-700">

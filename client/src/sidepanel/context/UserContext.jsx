@@ -3,6 +3,17 @@ import api from "../../utils/api";
 
 const UserContext = createContext();
 
+function normalizeUser(u, token = null) {
+  if (!u) return null;
+  return {
+    id: u.id || u._id,
+    username: u.username || u.name || (u.email ? u.email.split("@")[0] : ""),
+    email: u.email,
+    bodyImage: u.bodyImage || u.bodyImageUrl || u.profileImage || null,
+    token: token || u.token || null,
+  };
+}
+
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -11,7 +22,7 @@ export function UserProvider({ children }) {
   useEffect(() => {
     chrome.storage.local.get(["user", "token"], (result) => {
       if (result?.user) {
-        setUser(result.user);
+        setUser(normalizeUser(result.user, result.token));
         setIsLoggedIn(!!result.token);
       }
       setIsLoading(false);
@@ -22,10 +33,11 @@ export function UserProvider({ children }) {
   const login = async ({ email, password }) => {
     const resp = await api.post("/api/auth/login", { email, password });
     const { token, user: userData } = resp.data;
-    setUser(userData);
+    const normalized = normalizeUser(userData, token);
+    setUser(normalized);
     setIsLoggedIn(true);
-    chrome.storage.local.set({ user: userData, token });
-    return { token, user: userData };
+    chrome.storage.local.set({ user: normalized, token });
+    return { token, user: normalized };
   };
 
   // signup -> call backend, store token + user
@@ -36,32 +48,20 @@ export function UserProvider({ children }) {
       password,
     });
     const { token, user: userData } = resp.data;
-    // save token immediately so subsequent requests include it
-    chrome.storage.local.set({ token }, async () => {
-      // if there's an image file, upload it
+    const normalized = normalizeUser(userData, token);
+    // store token + user first
+    chrome.storage.local.set({ token, user: normalized }, async () => {
+      setUser(normalized);
+      setIsLoggedIn(true);
+      // if there's an image file, upload it via helper
       if (imageFile) {
         try {
-          const form = new FormData();
-          form.append("image", imageFile);
-          await api.post("/api/user/me/upload", form, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-          // fetch updated profile
-          const profile = await api.get("/api/user/me");
-          const updatedUser = profile.data.user;
-          setUser(updatedUser);
-          chrome.storage.local.set({ user: updatedUser });
-          setIsLoggedIn(true);
-          return { token, user: updatedUser };
+          await uploadBodyImage(imageFile);
         } catch (err) {
-          // image upload failed but registration succeeded
-          console.error("Image upload failed", err);
+          console.error("Image upload failed after signup", err);
         }
       }
-      setUser(userData);
-      setIsLoggedIn(true);
-      chrome.storage.local.set({ user: userData });
-      return { token, user: userData };
+      return { token, user: normalized };
     });
   };
 
@@ -77,6 +77,21 @@ export function UserProvider({ children }) {
     chrome.storage.local.set({ user: newUserData });
   };
 
+  // Upload body image and update stored user
+  const uploadBodyImage = async (file) => {
+    if (!file) throw new Error("No file provided");
+    const form = new FormData();
+    form.append("image", file);
+    const resp = await api.post("/api/user/me/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    const updated = resp.data.user;
+    const normalized = normalizeUser(updated);
+    setUser(normalized);
+    chrome.storage.local.set({ user: normalized });
+    return normalized;
+  };
+
   const value = {
     user,
     isLoggedIn,
@@ -85,6 +100,7 @@ export function UserProvider({ children }) {
     signup,
     logout,
     updateUser,
+    uploadBodyImage,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

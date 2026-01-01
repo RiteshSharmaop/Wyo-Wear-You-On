@@ -1,8 +1,8 @@
 const User = require("../models/User");
-const { applyDressOnUser, applyDressWithFiles } = require("../services/dressService");
+// const { applyDressOnUser, applyDressWithFiles } = require("../services/dressService");
 const { uploadBuffer } = require("../services/cloudinaryService");
 const { downloadImage, deleteImage } = require("../services/imageService");
-
+const {applyDressWithFiles} = require("../services/dressServiceGemini");
 // async function applyDress(req, res) {
 //   console.log("Backend: Call came for Process...");
 //   const { productImageUrl } = req.body;

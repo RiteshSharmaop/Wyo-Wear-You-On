@@ -1,14 +1,72 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
 export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
-  const { login } = useUser();
+  const { login, loginWithGoogle, googleClientId } = useUser();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    // Load Google Sign-In script
+    if (googleClientId) {
+      loadGoogleSignInScript();
+    }
+  }, [googleClientId]);
+
+  const handleGoogleSignIn = async (response) => {
+    setGoogleLoading(true);
+    setError("");
+    try {
+      const result = await loginWithGoogle(response.credential);
+      onLoginSuccess(result.user || result);
+    } catch (err) {
+      setError(err.message || "Google login failed");
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const loadGoogleSignInScript = () => {
+    if (window.google) {
+      initializeGoogleSignIn();
+      return;
+    }
+    
+    const script = document.createElement("script");
+    script.src = "https://accounts.google.com/gsi/client";
+    script.async = true;
+    script.defer = true;
+    script.onload = initializeGoogleSignIn;
+    document.head.appendChild(script);
+  };
+
+  const initializeGoogleSignIn = () => {
+    if (window.google && googleClientId) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleSignIn,
+        });
+        
+        // Render the button into the container
+        const buttonContainer = document.getElementById("google_signin_button");
+        if (buttonContainer && buttonContainer.children.length === 0) {
+          window.google.accounts.id.renderButton(buttonContainer, {
+            theme: "outline",
+            size: "large",
+            width: "100%",
+          });
+        }
+      } catch (err) {
+        console.error("Error initializing Google Sign-In:", err);
+      }
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -21,7 +79,6 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
       if (!emailRegex.test(email))
         throw new Error("Please enter a valid email");
 
-      // Call backend login via context
       const result = await login({ email, password });
       onLoginSuccess(result.user || result);
     } catch (err) {
@@ -46,6 +103,36 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-700 text-sm font-medium">{error}</p>
+          </div>
+        )}
+
+        {/* Google Sign In Button */}
+        {googleClientId && (
+          <div className="mb-6">
+            <div
+              id="google_signin_button"
+              style={{
+                display: "flex",
+                justifyContent: "center",
+              }}
+            />
+            {googleLoading && (
+              <p className="text-center text-sm text-gray-600 mt-2">
+                Signing in with Google...
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Divider */}
+        {googleClientId && (
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
+            </div>
           </div>
         )}
 
@@ -145,3 +232,51 @@ export default function LoginView({ onLoginSuccess, onSwitchToSignup }) {
     </div>
   );
 }
+
+//           {/* Remember Me & Forgot Password */}
+//           <div className="flex items-center justify-between">
+//             <label className="flex items-center gap-2">
+//               <input
+//                 type="checkbox"
+//                 className="w-4 h-4 rounded border-gray-300"
+//               />
+//               <span className="text-sm text-gray-600">Remember me</span>
+//             </label>
+//             <a href="#" className="text-sm text-blue-600 hover:text-blue-700">
+//               Forgot password?
+//             </a>
+//           </div>
+
+//           {/* Login Button */}
+//           <button
+//             type="submit"
+//             disabled={loading}
+//             className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50"
+//           >
+//             {loading ? "Signing in..." : "Sign In"}
+//           </button>
+//         </form>
+
+//         {/* Divider */}
+//         <div className="relative my-6">
+//           <div className="absolute inset-0 flex items-center">
+//             <div className="w-full border-t border-gray-300"></div>
+//           </div>
+//           <div className="relative flex justify-center text-sm">
+//             <span className="px-2 bg-white text-gray-500">
+//               Don't have an account?
+//             </span>
+//           </div>
+//         </div>
+
+//         {/* Sign Up Link */}
+//         <button
+//           onClick={onSwitchToSignup}
+//           className="w-full border-2 border-blue-500 text-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
+//         >
+//           Create New Account
+//         </button>
+//       </div>
+//     </div>
+//   );
+// }

@@ -3,10 +3,12 @@ import pkg from "./package.json";
 
 export default defineManifest({
   manifest_version: 3,
-  name: pkg.name,
+  name: "WYO - Wear Your Own",
   version: pkg.version,
   icons: {
-    48: "public/logo.png",
+    48: "public/icon48.png",
+    128: "public/icon128.png",
+    256: "public/icon256.png",
   },
   permissions: ["sidePanel", "contentSettings", "storage", "tabs"],
   host_permissions: [
